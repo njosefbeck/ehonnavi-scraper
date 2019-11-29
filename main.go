@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/njosefbeck/ehonnavi-scraper/db"
 	"github.com/njosefbeck/ehonnavi-scraper/scraperutils"
 )
 
@@ -13,20 +14,20 @@ func buildInitialURL(age string, pageNum string) string {
 }
 
 func main() {
-	books := map[string]scraperutils.Book{}
-
-	ages := []string{"00", "01"}
-
-	for _, age := range ages {
-		url := buildInitialURL(age, "1")
-		scraperutils.ProcessPage(age, url, books)
-		fmt.Println("Age:", age, "books added. JSON now has", len(books), "items.")
-	}
-
-	success, err := scraperutils.WriteToFile(books, "books.json")
+	db, err := db.Connect()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(success)
+	numAdded := 0
+	numSkipped := 0
+	ages := []string{"00", "01"}
+
+	for _, age := range ages {
+		url := buildInitialURL(age, "1")
+		scraperutils.ProcessPage(db, age, url, &numAdded, &numSkipped)
+	}
+
+	fmt.Println("==========================================")
+	fmt.Printf("Added %d new books. Skipped %d books.\n\n", numAdded, numSkipped)
 }

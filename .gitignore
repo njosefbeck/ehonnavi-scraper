@@ -71,3 +71,4 @@ yarn-error.log
 # Project specific
 books.json
 main
+.env

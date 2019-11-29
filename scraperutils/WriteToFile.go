@@ -6,6 +6,13 @@ import (
 	"io/ioutil"
 )
 
+// Book : struct for a book
+type Book struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
+	Age   string `json:"age"`
+}
+
 // WriteToFile : write books in memory as JSON to file
 func WriteToFile(books map[string]Book, fileName string) (string, error) {
 	data, err := json.Marshal(books)

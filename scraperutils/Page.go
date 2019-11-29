@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/jinzhu/gorm"
+	database "github.com/njosefbeck/ehonnavi-scraper/db"
 )
 
 func buildSubURL(relURL string) string {
@@ -40,16 +42,11 @@ func processHTML(url string) (*goquery.Document, error) {
 	return doc, nil
 }
 
-// Book : struct for a book
-type Book struct {
-	Title string `json:"title"`
-	URL   string `json:"url"`
-	Age   string `json:"age"`
-}
-
 // ProcessPage : process ehonnavi page and save book to books map
-func ProcessPage(age string, url string, books map[string]Book) {
+func ProcessPage(db *gorm.DB, age string, url string, numAdded *int, numSkipped *int) {
+	fmt.Println("==========================================")
 	fmt.Println("Now processing page: ", url)
+	fmt.Println("==========================================")
 
 	doc, err := processHTML(url)
 	if err != nil {
@@ -60,20 +57,37 @@ func ProcessPage(age string, url string, books map[string]Book) {
 	// Find all of those listings, loop over them and create a Book
 	doc.Find(".detailOneCol").Each(func(i int, s *goquery.Selection) {
 		title := s.Find(".text h3 a").Text()
-		href, _ := s.Find(".text h3 a").Attr("href")
+		url, _ := s.Find(".text h3 a").Attr("href")
 
-		_, hasKey := books[href]
-		if !hasKey {
-			books[href] = Book{Title: title, URL: href, Age: age}
+		var book = database.Book{}
+		// Check to see if book already exists in db (using url)
+		// If it exists, FirstOrCreate returns the existing record
+		// If it DOESN'T exist, use Attrs() to specify the values to be saved to the db,
+		// then FirstOrCreate creates the record
+		// Note: IsNew is a virtual field that's not saved to the db
+		db.
+			Where(database.Book{URL: url}).
+			Attrs(database.Book{Title: title, URL: url, Age: age, IsNew: true}).
+			FirstOrCreate(&book)
+
+		// Use IsNew field to determine if the book
+		// is newly created or already exists
+		if book.IsNew {
+			*numAdded++
+		} else {
+			*numSkipped++
 		}
 	})
+
+	fmt.Printf("Added %d new books. Skipped %d books.\n", numAdded, numSkipped)
 
 	// Call this function again to recursively work our way through
 	// each page in the particular age we're already looping through
 	doc.Find(".pageSending").First().Find("a").Each(func(i int, s *goquery.Selection) {
 		if s.Text() == "次へ→" {
 			href, _ := s.Attr("href")
-			ProcessPage(age, buildSubURL(href), books)
+			ProcessPage(db, age, buildSubURL(href), numAdded, numSkipped)
 		}
 	})
+
 }

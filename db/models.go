@@ -2,14 +2,13 @@ package db
 
 import (
 	"github.com/jinzhu/gorm"
-	// Required by gorm
-  _ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 // Book : Gorm Book model
 type Book struct {
-	gorm.model
-	URL 	string ``
-	Title string ``
-	Age		string ``
+	gorm.Model
+	URL   string `gorm:"type:varchar(255);unique;not null"`
+	Title string `gorm:"type:varchar(255);not null"`
+	Age   string `gorm:"type:varchar(10);not null"`
+	IsNew bool   `gorm:"-;default:false"`
 }
