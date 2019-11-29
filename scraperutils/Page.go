@@ -43,15 +43,16 @@ func processHTML(url string) (*goquery.Document, error) {
 }
 
 // ProcessPage : process ehonnavi page and save book to books map
-func ProcessPage(db *gorm.DB, age string, url string, numAdded *int, numSkipped *int) {
-	fmt.Println("==========================================")
-	fmt.Println("Now processing page: ", url)
-	fmt.Println("==========================================")
+func ProcessPage(db *gorm.DB, age string, url string, totalNumAdded *int, totalNumSkipped *int) {
+	fmt.Println("Processing: ", url)
 
 	doc, err := processHTML(url)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	numAdded := 0
+	numSkipped := 0
 
 	// Each book listing is inside a div with the class 'detailOneCol'
 	// Find all of those listings, loop over them and create a Book
@@ -73,20 +74,23 @@ func ProcessPage(db *gorm.DB, age string, url string, numAdded *int, numSkipped 
 		// Use IsNew field to determine if the book
 		// is newly created or already exists
 		if book.IsNew {
-			*numAdded++
+			numAdded++
 		} else {
-			*numSkipped++
+			numSkipped++
 		}
 	})
 
-	fmt.Printf("Added %d new books. Skipped %d books.\n", numAdded, numSkipped)
+	*totalNumAdded = *totalNumAdded + numAdded
+	*totalNumSkipped = *totalNumSkipped + numSkipped
+
+	fmt.Printf("→ Added: Page (%d) Total (%d). Skipped: Page (%d) Total (%d).\n\n", numAdded, *totalNumAdded, numSkipped, *totalNumSkipped)
 
 	// Call this function again to recursively work our way through
 	// each page in the particular age we're already looping through
 	doc.Find(".pageSending").First().Find("a").Each(func(i int, s *goquery.Selection) {
 		if s.Text() == "次へ→" {
 			href, _ := s.Attr("href")
-			ProcessPage(db, age, buildSubURL(href), numAdded, numSkipped)
+			ProcessPage(db, age, buildSubURL(href), totalNumAdded, totalNumSkipped)
 		}
 	})
 

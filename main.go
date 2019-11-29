@@ -29,5 +29,5 @@ func main() {
 	}
 
 	fmt.Println("==========================================")
-	fmt.Printf("Added %d new books. Skipped %d books.\n\n", numAdded, numSkipped)
+	fmt.Printf("Total books added: %d. Total books skipped: %d.\n\n", numAdded, numSkipped)
 }
