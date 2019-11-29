@@ -21,7 +21,7 @@ func main() {
 
 	numAdded := 0
 	numSkipped := 0
-	ages := []string{"00", "01"}
+	ages := []string{"00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "19"}
 
 	for _, age := range ages {
 		url := buildInitialURL(age, "1")
